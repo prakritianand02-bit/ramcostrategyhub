@@ -1,0 +1,876 @@
+bash
+
+cat > /mnt/user-data/outputs/index.html << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ramco LinkedIn Intelligence Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#EEF2F7;color:#1a1a2e;min-height:100vh}
+.app{max-width:1100px;margin:0 auto;padding:1.5rem 1rem 4rem}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#0d2147 0%,#1B3A6B 60%,#1e4d8c 100%);border-radius:16px;padding:1.8rem 2rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 32px rgba(27,58,107,0.3)}
+.header-left h1{color:#fff;font-size:22px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px}
+.header-left p{color:rgba(255,255,255,0.55);font-size:12px;letter-spacing:0.3px}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.header-badge{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:4px 14px;color:rgba(255,255,255,0.85);font-size:11px;font-weight:500}
+.header-score{display:flex;align-items:center;gap:8px}
+.score-bubble{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#F4A623,#e8940f);display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:0 4px 12px rgba(244,166,35,0.4)}
+.score-bubble .sv{font-size:18px;font-weight:800;color:#fff;line-height:1}
+.score-bubble .sl{font-size:8px;color:rgba(255,255,255,0.8);font-weight:600}
+
+/* TABS */
+.tabs{display:flex;gap:4px;background:#fff;border-radius:14px;padding:5px;margin-bottom:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,0.08);overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{padding:9px 16px;border:none;border-radius:10px;background:transparent;color:#888;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all 0.2s;letter-spacing:0.1px}
+.tab-btn.active{background:#1B3A6B;color:#fff;box-shadow:0 2px 8px rgba(27,58,107,0.3)}
+.tab-btn:hover:not(.active){background:#f0f4f8;color:#1B3A6B}
+
+/* PANELS */
+.panel{display:none}
+.panel.active{display:block}
+
+/* SECTION HEADERS */
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.section-header h2{font-size:15px;font-weight:700;color:#1B3A6B;letter-spacing:-0.2px}
+.section-divider{flex:1;height:1px;background:linear-gradient(to right,#d0dae8,transparent)}
+.section-tag{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;background:#E8F2FF;color:#1B3A6B;letter-spacing:0.5px;text-transform:uppercase}
+
+/* CARDS */
+.card{background:#fff;border-radius:14px;padding:1.4rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:12px}
+.card h3{font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+
+/* STAT CARDS */
+.stat-card{background:#fff;border-radius:12px;padding:1.1rem;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:3px solid #1B3A6B}
+.stat-card .sv{font-size:24px;font-weight:800;color:#1B3A6B}
+.stat-card .sl{font-size:11px;color:#555;margin-top:3px;font-weight:600}
+.stat-card .ss{font-size:10px;color:#aaa;margin-top:2px}
+
+/* HEALTH SCORE */
+.health-score-section{background:linear-gradient(135deg,#0d2147,#1B3A6B);border-radius:16px;padding:1.8rem;margin-bottom:1.5rem;color:#fff}
+.health-score-section h2{font-size:16px;font-weight:700;color:#fff;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px}
+.health-score-section h2 span{font-size:11px;font-weight:500;background:rgba(255,255,255,0.15);padding:3px 10px;border-radius:10px;color:rgba(255,255,255,0.8)}
+.hs-grid{display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:center}
+.hs-circle-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.hs-circle{width:130px;height:130px;border-radius:50%;background:conic-gradient(#F4A623 0deg 198deg,rgba(255,255,255,0.15) 198deg 360deg);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+.hs-circle-inner{width:100px;height:100px;border-radius:50%;background:#1B3A6B;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hs-score-val{font-size:32px;font-weight:800;color:#F4A623;line-height:1}
+.hs-score-max{font-size:13px;color:rgba(255,255,255,0.5)}
+.hs-label{font-size:12px;color:rgba(255,255,255,0.7);font-weight:500}
+.hs-metrics{display:flex;flex-direction:column;gap:10px}
+.hs-metric-row{display:flex;align-items:center;gap:12px}
+.hs-metric-label{font-size:12px;color:rgba(255,255,255,0.8);min-width:160px;font-weight:500}
+.hs-bar-track{flex:1;height:8px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden}
+.hs-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+.hs-metric-val{font-size:12px;font-weight:700;min-width:36px;text-align:right}
+.hs-commentary{margin-top:1.2rem;padding:14px 16px;background:rgba(255,255,255,0.1);border-radius:10px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.7;border-left:3px solid #F4A623}
+
+/* ALERTS */
+.alert-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
+.alert-card{border-radius:12px;padding:1.1rem 1.2rem;border-left:4px solid}
+.alert-red{background:#FFF1F0;border-left-color:#C0392B}
+.alert-orange{background:#FFF8F0;border-left-color:#E67E22}
+.alert-yellow{background:#FFFDF0;border-left-color:#F4A623}
+.alert-blue{background:#F0F6FF;border-left-color:#2E75B6}
+.alert-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.alert-icon{font-size:16px}
+.alert-title{font-size:13px;font-weight:700;color:#1a1a2e}
+.alert-severity{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px}
+.sev-critical{background:#FDDCDC;color:#C0392B}
+.sev-high{background:#FFE8D0;color:#E67E22}
+.sev-medium{background:#FFF3D0;color:#D4A017}
+.alert-body{font-size:12px;color:#555;line-height:1.6;margin-bottom:8px}
+.alert-rec{font-size:11px;font-weight:600;color:#1B3A6B;background:#E8F2FF;padding:5px 10px;border-radius:6px}
+
+/* KPI CARDS */
+.kpi-card{background:#fff;border-radius:12px;padding:1rem 1.1rem;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.kpi-label{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.kpi-value{font-size:22px;font-weight:800;color:#1B3A6B;margin-bottom:4px}
+.kpi-target{font-size:11px;color:#aaa;margin-bottom:8px}
+.progress-track{height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden;margin-bottom:6px}
+.progress-fill{height:100%;border-radius:3px;transition:width 1s ease}
+.kpi-gap{font-size:11px;font-weight:600}
+.gap-neg{color:#C0392B}
+.gap-pos{color:#1E7E34}
+.kpi-trend{font-size:12px;font-weight:700;padding:3px 10px;border-radius:10px;display:inline-block;margin-top:4px}
+.trend-up{background:#E8F5EC;color:#1E7E34}
+.trend-down{background:#FDDCDC;color:#C0392B}
+.trend-stable{background:#FFF8E8;color:#8A6200}
+
+/* STATUS INDICATORS */
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
+.status-green{background:#1E7E34}
+.status-yellow{background:#F4A623}
+.status-red{background:#C0392B}
+.status-chip{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;display:inline-flex;align-items:center;gap:4px}
+.chip-green{background:#E8F5EC;color:#1E7E34}
+.chip-yellow{background:#FFF8E8;color:#8A6200}
+.chip-red{background:#FDDCDC;color:#C0392B}
+.chip-blue{background:#E8F2FF;color:#1B3A6B}
+
+/* COMMAND CENTRE */
+.cmd-card{background:#fff;border-radius:12px;padding:1rem 1.2rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-top:3px solid #1B3A6B}
+.cmd-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cmd-title{font-size:12px;font-weight:700;color:#1a1a2e}
+.cmd-body{font-size:12px;color:#555;line-height:1.6;margin-bottom:8px}
+.cmd-action{font-size:11px;font-weight:600;color:#1B3A6B;background:#E8F2FF;padding:4px 10px;border-radius:6px;display:inline-block}
+
+/* OPPORTUNITY SCORECARD */
+.opp-card{background:#fff;border-radius:12px;padding:1rem 1.2rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);border-left:4px solid #1B3A6B;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.opp-rank{width:28px;height:28px;min-width:28px;border-radius:50%;background:#1B3A6B;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.opp-name{font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:3px}
+.opp-desc{font-size:11px;color:#888;line-height:1.4}
+.opp-impact{text-align:right;min-width:90px}
+.opp-impact-label{font-size:10px;color:#aaa;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
+.opp-impact-val{font-size:12px;font-weight:800;margin-top:2px}
+.impact-vh{color:#1E7E34}
+.impact-h{color:#2E75B6}
+.impact-mh{color:#8A6200}
+
+/* WATCHLIST */
+.watch-card{background:#fff;border-radius:12px;padding:1.1rem 1.3rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:8px;display:flex;align-items:flex-start;gap:14px;border-left:3px solid #1B3A6B}
+.watch-num{width:32px;height:32px;min-width:32px;border-radius:8px;background:#1B3A6B;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
+.watch-content{flex:1}
+.watch-title{font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+.watch-desc{font-size:12px;color:#666;line-height:1.5;margin-bottom:8px}
+.watch-tags{display:flex;gap:6px;flex-wrap:wrap}
+.watch-tag{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px}
+
+/* EXISTING STYLES */
+.bu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem}
+.bu-card{background:#fff;border-radius:12px;padding:1.1rem 1.3rem;cursor:pointer;border-left:4px solid #1B3A6B;box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:transform 0.15s,box-shadow 0.15s}
+.bu-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,0.12)}
+.bu-card .bu-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.bu-card .bu-desc{font-size:12px;color:#666;line-height:1.5}
+.bu-card .bu-link{font-size:11px;margin-top:6px;font-weight:700}
+.findings-box{background:#fff;border-radius:14px;padding:1.4rem;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.findings-box h3{font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:14px}
+.finding-row{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start}
+.finding-num{width:24px;height:24px;min-width:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.finding-row p{font-size:13px;color:#555;line-height:1.6;margin:0}
+.bu-btns{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.bu-btn{padding:7px 16px;border:2px solid #ddd;border-radius:20px;background:#fff;color:#666;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s}
+.bu-btn.active{border-color:#1B3A6B;background:#1B3A6B;color:#fff}
+.cat-filters{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.cat-btn{padding:4px 12px;border:1.5px solid #e0e0e0;border-radius:12px;background:#fff;color:#888;font-size:11px;cursor:pointer;transition:all 0.15s;font-weight:500}
+.cat-btn.active{border-color:#1B3A6B;background:#E8F2FF;color:#1B3A6B}
+.hash-count{font-size:13px;color:#666;margin-bottom:0.75rem;display:flex;justify-content:space-between}
+.hash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.hash-card{background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #e8edf2;border-left:3px solid #1B3A6B}
+.hash-tag{font-size:13px;font-weight:700;color:#1B3A6B;margin-bottom:8px}
+.hash-badges{display:flex;gap:5px;flex-wrap:wrap}
+.badge{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:600}
+.hash-mix{background:#E8F2FF;border-radius:10px;padding:14px 16px;margin-top:1.5rem;border:1px solid rgba(46,117,182,0.2)}
+.hash-mix h4{font-size:13px;font-weight:700;color:#1B3A6B;margin-bottom:6px}
+.hash-mix p{font-size:12px;color:#2E4A7A;line-height:1.6}
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{padding:9px 10px;text-align:left;font-size:11px;color:#999;font-weight:700;border-bottom:2px solid #f0f0f0}
+.data-table td{padding:10px;border-bottom:1px solid #f5f5f5}
+.data-table .name-col{font-weight:700;color:#1a1a2e}
+.data-table .note-col{color:#888;font-size:11px}
+.eng-high{color:#1E7E34;font-weight:700}
+.eng-mid{color:#F4A623;font-weight:700}
+.eng-low{color:#C0392B;font-weight:700}
+.insight-row{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+.dot-blue{color:#2E75B6;font-size:20px;line-height:1.2}
+.dot-gold{color:#F4A623;font-size:16px;line-height:1.4}
+.insight-row p{font-size:12px;color:#555;line-height:1.6;margin:0}
+.steal-box{background:#E8F5EC;border:1px solid #9FE1CB;border-radius:10px;padding:14px 16px}
+.steal-box .steal-label{font-size:12px;font-weight:700;color:#1E7E34;margin-bottom:4px}
+.steal-box p{font-size:12px;color:#2A5A3A;line-height:1.6;margin:0}
+.ana-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.25rem}
+.ana-stat{background:#fff;border-radius:10px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.ana-stat .av{font-size:20px;font-weight:700}
+.ana-stat .al{font-size:11px;color:#888;margin-top:3px}
+.chart-wrap{position:relative;height:200px}
+.finding-card{background:#fff;border-radius:10px;padding:13px 14px;box-shadow:0 2px 6px rgba(0,0,0,0.06);border-left:3px solid #1B3A6B;display:flex;gap:12px;margin-bottom:8px}
+.finding-card .fn{font-size:12px;font-weight:800;color:#1B3A6B;min-width:18px}
+.finding-card .ft{font-size:13px;font-weight:700;color:#1a1a2e;margin-bottom:3px}
+.finding-card .fb{font-size:12px;color:#666;line-height:1.6}
+.tactic-card{background:#fff;border-radius:12px;padding:1.3rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:10px}
+.tactic-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.tactic-left{display:flex;align-items:center;gap:10px}
+.tactic-icon{width:34px;height:34px;border-radius:8px;background:#E8F2FF;display:flex;align-items:center;justify-content:center;font-size:18px}
+.tactic-title{font-size:14px;font-weight:700;color:#1a1a2e}
+.tactic-stat{font-size:11px;padding:4px 12px;border-radius:20px;background:#E8F5EC;color:#1E7E34;font-weight:700;white-space:nowrap}
+.tactic-body{font-size:13px;color:#555;line-height:1.6;margin-bottom:8px}
+.tactic-source{font-size:11px;color:#bbb}
+.exp-box{background:#E8F2FF;border-radius:12px;padding:1.3rem;border:1px solid rgba(46,117,182,0.3)}
+.exp-box h3{font-size:15px;font-weight:800;color:#1B3A6B;margin-bottom:4px}
+.exp-box .exp-sub{font-size:13px;color:#2E4A7A;margin-bottom:14px}
+.week-row{display:flex;gap:12px;margin-bottom:8px;padding:8px 12px;background:rgba(255,255,255,0.65);border-radius:8px;align-items:flex-start}
+.week-label{font-size:12px;font-weight:700;color:#1B3A6B;min-width:58px}
+.week-action{font-size:12px;color:#2E4A7A;line-height:1.5}
+.benchmarks{margin-top:14px;padding:12px 14px;background:rgba(255,255,255,0.85);border-radius:8px}
+.benchmarks h4{font-size:12px;font-weight:700;color:#1B3A6B;margin-bottom:8px}
+.bench-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
+.bench-metric{font-size:11px;color:#888}
+.bench-target{font-size:15px;font-weight:800;color:#1E7E34}
+.bench-current{font-size:10px;color:#aaa}
+
+/* DAILY TRACKER */
+.tracker-section{background:#fff;border-radius:14px;padding:1.4rem;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:1.5rem}
+.tracker-section h2{font-size:15px;font-weight:700;color:#1B3A6B;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px}
+.tracker-main{display:grid;grid-template-columns:auto 1fr;gap:2rem;align-items:center}
+.tracker-big-val{font-size:52px;font-weight:900;color:#1B3A6B;line-height:1}
+.tracker-big-label{font-size:12px;color:#888;margin-top:4px;font-weight:600}
+.tracker-detail{display:flex;flex-direction:column;gap:10px}
+.tracker-row{display:grid;grid-template-columns:140px 1fr 60px 80px;align-items:center;gap:12px}
+.tracker-row-label{font-size:12px;font-weight:600;color:#555}
+.tracker-bar-track{height:10px;background:#f0f0f0;border-radius:5px;overflow:hidden}
+.tracker-bar-fill{height:100%;border-radius:5px}
+.tracker-row-val{font-size:13px;font-weight:800;text-align:right}
+.tracker-row-status{text-align:right}
+
+@media(max-width:700px){
+  .g2,.g3,.g4,.g6{grid-template-columns:1fr}
+  .bu-grid{grid-template-columns:1fr}
+  .alert-grid{grid-template-columns:1fr}
+  .ana-stat-grid{grid-template-columns:1fr 1fr}
+  .bench-grid{grid-template-columns:1fr}
+  .hs-grid{grid-template-columns:1fr;text-align:center}
+  .tracker-main{grid-template-columns:1fr}
+  .tracker-row{grid-template-columns:1fr 1fr}
+  .header{flex-direction:column;gap:12px;text-align:center}
+  .header-right{align-items:center}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Ramco LinkedIn Intelligence Platform</h1>
+    <p>MARKETING INTELLIGENCE &nbsp;·&nbsp; PRAKRITI ANAND &nbsp;·&nbsp; JUNE 2026 &nbsp;·&nbsp; CONFIDENTIAL</p>
+  </div>
+  <div class="header-right">
+    <div class="header-badge">Executive Dashboard</div>
+    <div class="header-score">
+      <div style="text-align:right">
+        <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:2px">LinkedIn Health Score</div>
+        <div style="font-size:10px;color:#F4A623;font-weight:600">Needs Improvement</div>
+      </div>
+      <div class="score-bubble">
+        <div class="sv">55</div>
+        <div class="sl">/100</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('executive',this)">⚡ Executive Summary</button>
+  <button class="tab-btn" onclick="switchTab('overview',this)">📋 Platform Overview</button>
+  <button class="tab-btn" onclick="switchTab('hashtags',this)"># Hashtag Toolkit</button>
+  <button class="tab-btn" onclick="switchTab('competitors',this)">🔍 Competitor Intel</button>
+  <button class="tab-btn" onclick="switchTab('analytics',this)">📈 Analytics</button>
+  <button class="tab-btn" onclick="switchTab('growth',this)">🚀 Growth Tactics</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- EXECUTIVE SUMMARY -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="panel-executive" class="panel active">
+
+  <!-- HEALTH SCORE -->
+  <div class="health-score-section">
+    <h2>LinkedIn Health Score <span>Diagnostic Assessment · June 2026</span></h2>
+    <div class="hs-grid">
+      <div class="hs-circle-wrap">
+        <div class="hs-circle">
+          <div class="hs-circle-inner">
+            <div class="hs-score-val">55</div>
+            <div class="hs-score-max">/100</div>
+          </div>
+        </div>
+        <div class="hs-label">Needs Improvement</div>
+      </div>
+      <div class="hs-metrics">
+        <div class="hs-metric-row">
+          <div class="hs-metric-label">Engagement Rate</div>
+          <div class="hs-bar-track"><div class="hs-bar-fill" style="width:79%;background:#F4A623"></div></div>
+          <div class="hs-metric-val" style="color:#F4A623">15.8%</div>
+        </div>
+        <div class="hs-metric-row">
+          <div class="hs-metric-label">Comment Volume</div>
+          <div class="hs-bar-track"><div class="hs-bar-fill" style="width:15%;background:#C0392B"></div></div>
+          <div class="hs-metric-val" style="color:#C0392B">Low</div>
+        </div>
+        <div class="hs-metric-row">
+          <div class="hs-metric-label">Audience Participation</div>
+          <div class="hs-bar-track"><div class="hs-bar-fill" style="width:20%;background:#C0392B"></div></div>
+          <div class="hs-metric-val" style="color:#C0392B">Low</div>
+        </div>
+        <div class="hs-metric-row">
+          <div class="hs-metric-label">Posting Consistency</div>
+          <div class="hs-bar-track"><div class="hs-bar-fill" style="width:45%;background:#F4A623"></div></div>
+          <div class="hs-metric-val" style="color:#F4A623">Moderate</div>
+        </div>
+        <div class="hs-metric-row">
+          <div class="hs-metric-label">Content Effectiveness</div>
+          <div class="hs-bar-track"><div class="hs-bar-fill" style="width:60%;background:#F4A623"></div></div>
+          <div class="hs-metric-val" style="color:#F4A623">Fair</div>
+        </div>
+        <div class="hs-metric-row">
+          <div class="hs-metric-label">Community Building</div>
+          <div class="hs-bar-track"><div class="hs-bar-fill" style="width:18%;background:#C0392B"></div></div>
+          <div class="hs-metric-val" style="color:#C0392B">Critical</div>
+        </div>
+        <div style="margin-top:4px;display:flex;gap:12px">
+          <div style="display:flex;align-items:center;gap:5px"><span class="status-dot status-green"></span><span style="font-size:11px;color:rgba(255,255,255,0.7)">Healthy (80+)</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><span class="status-dot status-yellow"></span><span style="font-size:11px;color:rgba(255,255,255,0.7)">Needs Attention (50–79)</span></div>
+          <div style="display:flex;align-items:center;gap:5px"><span class="status-dot status-red"></span><span style="font-size:11px;color:rgba(255,255,255,0.7)">Critical (&lt;50)</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="hs-commentary">
+      <strong>Executive Commentary:</strong> Ramco's LinkedIn Health Score of 55/100 reflects a platform with genuine organic reach capability but critically low community participation. The 15.8% organic engagement rate is a strong foundation — however, with only 454 comments across 6 months and severe month-on-month volatility, the page is operating as a broadcast channel rather than a brand community. The target score of 80+ is achievable within two quarters if the five strategic priorities are executed consistently.
+    </div>
+  </div>
+
+  <!-- CURRENT SITUATION + ALERTS -->
+  <div class="section-header">
+    <h2>Critical Performance Alerts</h2>
+    <div class="section-divider"></div>
+    <div class="section-tag">Active Issues</div>
+  </div>
+  <div class="alert-grid" style="margin-bottom:1.5rem">
+    <div class="alert-card alert-red">
+      <div class="alert-header"><span class="alert-icon">🚨</span><span class="alert-title">Comment Volume Crisis</span><span class="alert-severity sev-critical">CRITICAL</span></div>
+      <div class="alert-body">Only 454 comments across 6 months — less than 3 per day. The audience sees content but almost never participates. This is the single biggest indicator of a passive, disengaged community.</div>
+      <div class="alert-rec">Recommendation: Launch weekly poll series and hook-led posts immediately</div>
+    </div>
+    <div class="alert-card alert-orange">
+      <div class="alert-header"><span class="alert-icon">⚠️</span><span class="alert-title">Performance Volatility</span><span class="alert-severity sev-high">HIGH</span></div>
+      <div class="alert-body">Month-on-month swings of up to 67% indicate growth depends on isolated campaigns rather than a sustainable content strategy. January 2026 saw a near-complete content collapse with only 7 comments.</div>
+      <div class="alert-rec">Recommendation: Implement a structured 12-week content calendar</div>
+    </div>
+    <div class="alert-card alert-orange">
+      <div class="alert-header"><span class="alert-icon">⚠️</span><span class="alert-title">Sponsored Content ROI Gap</span><span class="alert-severity sev-high">HIGH</span></div>
+      <div class="alert-body">Sponsored content generates 3x more impressions than organic but only 1.2% engagement vs organic's 15.8%. Budget is being allocated to reach that the audience does not respond to.</div>
+      <div class="alert-rec">Recommendation: Reallocate budget toward organic content production</div>
+    </div>
+    <div class="alert-card alert-yellow">
+      <div class="alert-header"><span class="alert-icon">⚡</span><span class="alert-title">Community Building Gap</span><span class="alert-severity sev-medium">MEDIUM</span></div>
+      <div class="alert-body">High impressions but consistently low conversation levels indicate a broadcast-style page rather than a community-led brand. No competitor in any BU owns the APAC and MEA conversation — Ramco's white space is closing.</div>
+      <div class="alert-rec">Recommendation: Community-first content — employee advocacy and regional series</div>
+    </div>
+  </div>
+
+  <!-- DAILY TRACKER -->
+  <div class="section-header">
+    <h2>Daily Engagement Tracker</h2>
+    <div class="section-divider"></div>
+    <div class="section-tag">KPI Monitor</div>
+  </div>
+  <div class="tracker-section" style="margin-bottom:1.5rem">
+    <div class="tracker-main">
+      <div>
+        <div class="tracker-big-val">15.8%</div>
+        <div class="tracker-big-label">Current Avg Organic Engagement</div>
+        <div style="margin-top:10px"><span class="kpi-trend trend-stable">→ Stable</span></div>
+      </div>
+      <div class="tracker-detail">
+        <div class="tracker-row">
+          <div class="tracker-row-label">Engagement Rate</div>
+          <div class="tracker-bar-track"><div class="tracker-bar-fill" style="width:63%;background:#F4A623"></div></div>
+          <div class="tracker-row-val" style="color:#F4A623">15.8%</div>
+          <div class="tracker-row-status"><span class="status-chip chip-yellow">⚡ Target: 25%</span></div>
+        </div>
+        <div class="tracker-row">
+          <div class="tracker-row-label">Comments per Day</div>
+          <div class="tracker-bar-track"><div class="tracker-bar-fill" style="width:15%;background:#C0392B"></div></div>
+          <div class="tracker-row-val" style="color:#C0392B">2.5</div>
+          <div class="tracker-row-status"><span class="status-chip chip-red">🚨 Target: 15+</span></div>
+        </div>
+        <div class="tracker-row">
+          <div class="tracker-row-label">Organic Impressions/Day</div>
+          <div class="tracker-bar-track"><div class="tracker-bar-fill" style="width:52%;background:#2E75B6"></div></div>
+          <div class="tracker-row-val" style="color:#2E75B6">5.2k</div>
+          <div class="tracker-row-status"><span class="status-chip chip-blue">→ Target: 8k</span></div>
+        </div>
+        <div class="tracker-row">
+          <div class="tracker-row-label">Sponsored Engagement</div>
+          <div class="tracker-bar-track"><div class="tracker-bar-fill" style="width:8%;background:#C0392B"></div></div>
+          <div class="tracker-row-val" style="color:#C0392B">1.2%</div>
+          <div class="tracker-row-status"><span class="status-chip chip-red">🚨 Target: 5%</span></div>
+        </div>
+        <div class="tracker-row">
+          <div class="tracker-row-label">Best Posting Days</div>
+          <div class="tracker-bar-track"><div class="tracker-bar-fill" style="width:100%;background:#1E7E34"></div></div>
+          <div class="tracker-row-val" style="color:#1E7E34">Tue–Thu</div>
+          <div class="tracker-row-status"><span class="status-chip chip-green">✓ Confirmed</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERFORMANCE MONITORING CENTRE -->
+  <div class="section-header">
+    <h2>Performance Monitoring Centre</h2>
+    <div class="section-divider"></div>
+    <div class="section-tag">Live Metrics</div>
+  </div>
+  <div class="g3" style="margin-bottom:1.5rem">
+    <div class="kpi-card">
+      <div class="kpi-label">Organic Engagement Rate</div>
+      <div class="kpi-value">15.8%</div>
+      <div class="kpi-target">Target: 25.0%</div>
+      <div class="progress-track"><div class="progress-fill" style="width:63%;background:#F4A623"></div></div>
+      <div class="kpi-gap gap-neg">Gap: –9.2%</div>
+      <span class="kpi-trend trend-stable">→ Stable</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Monthly Comments</div>
+      <div class="kpi-value">75</div>
+      <div class="kpi-target">Target: 300</div>
+      <div class="progress-track"><div class="progress-fill" style="width:25%;background:#C0392B"></div></div>
+      <div class="kpi-gap gap-neg">Gap: –225</div>
+      <span class="kpi-trend trend-down">↓ Critical</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Organic Impressions/Month</div>
+      <div class="kpi-value">156k</div>
+      <div class="kpi-target">Target: 250k</div>
+      <div class="progress-track"><div class="progress-fill" style="width:62%;background:#F4A623"></div></div>
+      <div class="kpi-gap gap-neg">Gap: –94k</div>
+      <span class="kpi-trend trend-up">↑ Improving</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Sponsored vs Organic Ratio</div>
+      <div class="kpi-value">1.2%</div>
+      <div class="kpi-target">Organic achieving 15.8%</div>
+      <div class="progress-track"><div class="progress-fill" style="width:8%;background:#C0392B"></div></div>
+      <div class="kpi-gap gap-neg">13x organic outperforms</div>
+      <span class="kpi-trend trend-down">↓ Rebalance needed</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Audience Interaction Score</div>
+      <div class="kpi-value">22/100</div>
+      <div class="kpi-target">Target: 70/100</div>
+      <div class="progress-track"><div class="progress-fill" style="width:22%;background:#C0392B"></div></div>
+      <div class="kpi-gap gap-neg">Gap: –48 points</div>
+      <span class="kpi-trend trend-down">↓ Needs urgent action</span>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Competitor Benchmark</div>
+      <div class="kpi-value">Mid-tier</div>
+      <div class="kpi-target">Best in class: Avsight 9.68%</div>
+      <div class="progress-track"><div class="progress-fill" style="width:55%;background:#2E75B6"></div></div>
+      <div class="kpi-gap" style="color:#2E75B6">Organic engagement above Oracle and SAP</div>
+      <span class="kpi-trend trend-stable">→ Competitive</span>
+    </div>
+  </div>
+
+  <!-- MARKETING COMMAND CENTRE -->
+  <div class="section-header">
+    <h2>Marketing Command Centre</h2>
+    <div class="section-divider"></div>
+    <div class="section-tag">Status Dashboard</div>
+  </div>
+  <div class="g3" style="margin-bottom:1.5rem">
+    <div class="cmd-card" style="border-top-color:#C0392B">
+      <div class="cmd-header"><div class="cmd-title">Audience Engagement Health</div><span class="status-chip chip-red">🚨 Critical</span></div>
+      <div class="cmd-body">Comment volume at 3/day vs target of 15+. No interactive content formats currently in use.</div>
+      <div class="cmd-action">Action: Launch poll series this week</div>
+    </div>
+    <div class="cmd-card" style="border-top-color:#C0392B">
+      <div class="cmd-header"><div class="cmd-title">Comment Health</div><span class="status-chip chip-red">🚨 Critical</span></div>
+      <div class="cmd-body">454 total comments across 6 months. Audience is passive — content reaches people but does not spark conversation.</div>
+      <div class="cmd-action">Action: Hook-led posts + employee comments</div>
+    </div>
+    <div class="cmd-card" style="border-top-color:#F4A623">
+      <div class="cmd-header"><div class="cmd-title">Content Consistency</div><span class="status-chip chip-yellow">⚡ Attention</span></div>
+      <div class="cmd-body">MoM swings of up to 67%. January collapse indicates no structured content calendar in place.</div>
+      <div class="cmd-action">Action: Implement 12-week editorial calendar</div>
+    </div>
+    <div class="cmd-card" style="border-top-color:#F4A623">
+      <div class="cmd-header"><div class="cmd-title">Thought Leadership Health</div><span class="status-chip chip-yellow">⚡ Attention</span></div>
+      <div class="cmd-body">No dedicated APAC or MEA thought leadership series. QFD score confirms this as Rank 1 priority at 632.7.</div>
+      <div class="cmd-action">Action: Launch APAC Payroll Reality Series</div>
+    </div>
+    <div class="cmd-card" style="border-top-color:#C0392B">
+      <div class="cmd-header"><div class="cmd-title">Community Growth Health</div><span class="status-chip chip-red">🚨 Critical</span></div>
+      <div class="cmd-body">No employee advocacy programme. No recurring community formats. Follower relationship is entirely one-directional.</div>
+      <div class="cmd-action">Action: Employee advocacy programme Q3 2026</div>
+    </div>
+    <div class="cmd-card" style="border-top-color:#1E7E34">
+      <div class="cmd-header"><div class="cmd-title">Competitor Threat Level</div><span class="status-chip chip-green">✓ Manageable</span></div>
+      <div class="cmd-body">No competitor owns APAC or MEA content authentically. Ramco's geographic depth is a unique and unclaimed asset.</div>
+      <div class="cmd-action">Action: Claim regional positioning now</div>
+    </div>
+  </div>
+
+  <!-- STRATEGIC OPPORTUNITIES -->
+  <div class="section-header">
+    <h2>Strategic Opportunity Scoreboard</h2>
+    <div class="section-divider"></div>
+    <div class="section-tag">Research-Backed</div>
+  </div>
+  <div style="margin-bottom:1.5rem">
+    <div class="opp-card" style="border-left-color:#1E7E34">
+      <div class="opp-rank" style="background:#1E7E34">1</div>
+      <div style="flex:1"><div class="opp-name">APAC Thought Leadership</div><div class="opp-desc">No competitor creates authentic APAC-specific content. Ramco operates across Singapore, Malaysia, Indonesia, Philippines, Vietnam and India — an exclusive content territory.</div></div>
+      <div class="opp-impact"><div class="opp-impact-label">Potential Impact</div><div class="opp-impact-val impact-vh">Very High</div></div>
+    </div>
+    <div class="opp-card" style="border-left-color:#1E7E34">
+      <div class="opp-rank" style="background:#1E7E34">2</div>
+      <div style="flex:1"><div class="opp-name">GCC Payroll Compliance Content</div><div class="opp-desc">WPS compliance, GCC labour law updates and regional workforce management — zero competitor covers this authentically. Ramco operates across all six GCC countries.</div></div>
+      <div class="opp-impact"><div class="opp-impact-label">Potential Impact</div><div class="opp-impact-val impact-vh">Very High</div></div>
+    </div>
+    <div class="opp-card" style="border-left-color:#2E75B6">
+      <div class="opp-rank" style="background:#2E75B6">3</div>
+      <div style="flex:1"><div class="opp-name">Dangerous Goods Logistics Niche</div><div class="opp-desc">No TMS competitor on LinkedIn creates content around DG handling or chemical logistics. Ramco has this capability and zero competition for this content space.</div></div>
+      <div class="opp-impact"><div class="opp-impact-label">Potential Impact</div><div class="opp-impact-val impact-h">High</div></div>
+    </div>
+    <div class="opp-card" style="border-left-color:#2E75B6">
+      <div class="opp-rank" style="background:#2E75B6">4</div>
+      <div style="flex:1"><div class="opp-name">ASEAN Logistics Leadership</div><div class="opp-desc">China+1 supply chain shift creating new ASEAN logistics corridors that no TMS brand addresses. Oracle and SAP cannot speak to this authentically.</div></div>
+      <div class="opp-impact"><div class="opp-impact-label">Potential Impact</div><div class="opp-impact-val impact-h">High</div></div>
+    </div>
+    <div class="opp-card" style="border-left-color:#F4A623">
+      <div class="opp-rank" style="background:#F4A623">5</div>
+      <div style="flex:1"><div class="opp-name">Mid-Market ERP Positioning</div><div class="opp-desc">Every ERP competitor targets large enterprise. Mid-market manufacturers in APAC and MEA are the fastest growing segment and completely underserved on LinkedIn.</div></div>
+      <div class="opp-impact"><div class="opp-impact-label">Potential Impact</div><div class="opp-impact-val impact-mh">Medium-High</div></div>
+    </div>
+    <div class="opp-card" style="border-left-color:#F4A623">
+      <div class="opp-rank" style="background:#F4A623">6</div>
+      <div style="flex:1"><div class="opp-name">Employee Advocacy Programme</div><div class="opp-desc">No competitor uses employees authentically as brand voices. Ramco has aviation engineers, payroll specialists and logistics managers across the region whose credibility exceeds any brand page.</div></div>
+      <div class="opp-impact"><div class="opp-impact-label">Potential Impact</div><div class="opp-impact-val impact-mh">Medium-High</div></div>
+    </div>
+  </div>
+
+  <!-- EXECUTIVE WATCHLIST -->
+  <div class="section-header">
+    <h2>Executive Watchlist — Top 5 Immediate Priorities</h2>
+    <div class="section-divider"></div>
+    <div class="section-tag">Action Required</div>
+  </div>
+  <div style="margin-bottom:1.5rem">
+    <div class="watch-card" style="border-left-color:#C0392B">
+      <div class="watch-num" style="background:#C0392B">1</div>
+      <div class="watch-content">
+        <div class="watch-title">Increase Comment Volume Immediately</div>
+        <div class="watch-desc">454 comments across 6 months is a critical failure signal. Every post needs an engagement mechanism — a question, a poll, or a provocative hook that demands a response. This is the single highest-urgency action on this platform.</div>
+        <div class="watch-tags"><span class="watch-tag" style="background:#FDDCDC;color:#C0392B">Impact: Very High</span><span class="watch-tag" style="background:#FDDCDC;color:#C0392B">Urgency: Immediate</span><span class="watch-tag" style="background:#E8F2FF;color:#1B3A6B">Owner: Content Team</span></div>
+      </div>
+    </div>
+    <div class="watch-card" style="border-left-color:#E67E22">
+      <div class="watch-num" style="background:#E67E22">2</div>
+      <div class="watch-content">
+        <div class="watch-title">Launch APAC Payroll Reality Series</div>
+        <div class="watch-desc">Six-week carousel and poll experiment targeting APAC and GCC payroll audiences. Hook-led posts on real compliance challenges that no ADP or Deel can answer as authentically as Ramco. QFD-validated as top content priority with a score of 632.7.</div>
+        <div class="watch-tags"><span class="watch-tag" style="background:#FFE8D0;color:#E67E22">Impact: High</span><span class="watch-tag" style="background:#FFE8D0;color:#E67E22">Urgency: This Quarter</span><span class="watch-tag" style="background:#E8F2FF;color:#1B3A6B">Timeline: Q3 2026</span></div>
+      </div>
+    </div>
+    <div class="watch-card" style="border-left-color:#F4A623">
+      <div class="watch-num" style="background:#F4A623">3</div>
+      <div class="watch-content">
+        <div class="watch-title">Build Employee Advocacy Programme</div>
+        <div class="watch-desc">Start with 10 to 15 employees already active on LinkedIn across all BUs. Give them post frameworks to personalise. Employee posts deliver 561% more reach and 84% of B2B buyers trust employee content more than brand pages.</div>
+        <div class="watch-tags"><span class="watch-tag" style="background:#FFF3D0;color:#D4A017">Impact: High</span><span class="watch-tag" style="background:#FFF3D0;color:#D4A017">Urgency: High</span><span class="watch-tag" style="background:#E8F2FF;color:#1B3A6B">Timeline: Q3 2026</span></div>
+      </div>
+    </div>
+    <div class="watch-card" style="border-left-color:#2E75B6">
+      <div class="watch-num" style="background:#2E75B6">4</div>
+      <div class="watch-content">
+        <div class="watch-title">Launch Weekly Poll Programme Across All BUs</div>
+        <div class="watch-desc">One poll per week rotating across Payce, Aviation MRO, Logistics, and ERP. Polls achieve 8.9% engagement rate — second highest format on LinkedIn in 2026. Voting is one click meaning participation barrier is the lowest of any content format.</div>
+        <div class="watch-tags"><span class="watch-tag" style="background:#E8F2FF;color:#2E75B6">Impact: Medium-High</span><span class="watch-tag" style="background:#E8F2FF;color:#2E75B6">Urgency: High</span><span class="watch-tag" style="background:#E8F2FF;color:#1B3A6B">Cost: Zero</span></div>
+      </div>
+    </div>
+    <div class="watch-card" style="border-left-color:#1E7E34">
+      <div class="watch-num" style="background:#1E7E34">5</div>
+      <div class="watch-content">
+        <div class="watch-title">ASEAN Logistics Thought Leadership Series</div>
+        <div class="watch-desc">Weekly content on ASEAN cross-border logistics, dangerous goods compliance, and supply chain challenges specific to Southeast Asia. No TMS competitor is doing this. Descartes achieves 5.11% engagement through consistent resource-led content — Ramco can beat this with regional authenticity.</div>
+        <div class="watch-tags"><span class="watch-tag" style="background:#E8F5EC;color:#1E7E34">Impact: Medium-High</span><span class="watch-tag" style="background:#E8F5EC;color:#1E7E34">Urgency: Medium</span><span class="watch-tag" style="background:#E8F2FF;color:#1B3A6B">Timeline: Q3–Q4 2026</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STRATEGIC PRIORITIES + EXPECTED IMPACT -->
+  <div class="g2">
+    <div class="card">
+      <h3>Strategic Priorities — AHP Validated</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:#E8F2FF;border-radius:8px;border-left:3px solid #1B3A6B">
+          <span style="font-size:16px;font-weight:800;color:#1B3A6B;min-width:22px">1</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:700;color:#1a1a2e">Audience Engagement</div><div style="font-size:11px;color:#666">33.3% AHP weight — highest priority</div></div>
+          <div style="width:50px;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden"><div style="width:100%;height:100%;background:#1B3A6B;border-radius:3px"></div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:#E8F2FF;border-radius:8px;border-left:3px solid #1B3A6B">
+          <span style="font-size:16px;font-weight:800;color:#1B3A6B;min-width:22px">2</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:700;color:#1a1a2e">Brand Clarity</div><div style="font-size:11px;color:#666">33.3% AHP weight — equal highest</div></div>
+          <div style="width:50px;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden"><div style="width:100%;height:100%;background:#1B3A6B;border-radius:3px"></div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:#f8f9fb;border-radius:8px;border-left:3px solid #2E75B6">
+          <span style="font-size:16px;font-weight:800;color:#2E75B6;min-width:22px">3</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:700;color:#1a1a2e">Thought Leadership</div><div style="font-size:11px;color:#666">QFD Rank 1 — score 632.7</div></div>
+          <div style="width:50px;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden"><div style="width:33%;height:100%;background:#2E75B6;border-radius:3px"></div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:#f8f9fb;border-radius:8px;border-left:3px solid #2E75B6">
+          <span style="font-size:16px;font-weight:800;color:#2E75B6;min-width:22px">4</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:700;color:#1a1a2e">Community Building</div><div style="font-size:11px;color:#666">Critical gap — less than 3 comments/day</div></div>
+          <div style="width:50px;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden"><div style="width:33%;height:100%;background:#2E75B6;border-radius:3px"></div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:#f8f9fb;border-radius:8px;border-left:3px solid #F4A623">
+          <span style="font-size:16px;font-weight:800;color:#F4A623;min-width:22px">5</span>
+          <div style="flex:1"><div style="font-size:13px;font-weight:700;color:#1a1a2e">Regional Positioning</div><div style="font-size:11px;color:#666">APAC and MEA white space — unclaimed</div></div>
+          <div style="width:50px;height:6px;background:#f0f0f0;border-radius:3px;overflow:hidden"><div style="width:33%;height:100%;background:#F4A623;border-radius:3px"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Expected Business Impact — If Recommendations Implemented</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="padding:10px 12px;background:#E8F5EC;border-radius:8px;border-left:3px solid #1E7E34">
+          <div style="font-size:12px;font-weight:700;color:#1E7E34;margin-bottom:3px">Engagement Rate</div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:#555">15.8%</span><span style="font-size:12px;color:#1E7E34;font-weight:700">→ 25%+</span><span style="font-size:11px;color:#888">within 2 quarters</span></div>
+        </div>
+        <div style="padding:10px 12px;background:#E8F5EC;border-radius:8px;border-left:3px solid #1E7E34">
+          <div style="font-size:12px;font-weight:700;color:#1E7E34;margin-bottom:3px">Comment Volume</div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:#555">3/day</span><span style="font-size:12px;color:#1E7E34;font-weight:700">→ 15+/day</span><span style="font-size:11px;color:#888">within 6 weeks of polls launch</span></div>
+        </div>
+        <div style="padding:10px 12px;background:#E8F5EC;border-radius:8px;border-left:3px solid #1E7E34">
+          <div style="font-size:12px;font-weight:700;color:#1E7E34;margin-bottom:3px">APAC Brand Authority</div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:#555">Zero</span><span style="font-size:12px;color:#1E7E34;font-weight:700">→ Category leader</span><span style="font-size:11px;color:#888">exclusive territory</span></div>
+        </div>
+        <div style="padding:10px 12px;background:#E8F5EC;border-radius:8px;border-left:3px solid #1E7E34">
+          <div style="font-size:12px;font-weight:700;color:#1E7E34;margin-bottom:3px">LinkedIn Health Score</div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:#555">55/100</span><span style="font-size:12px;color:#1E7E34;font-weight:700">→ 80+/100</span><span style="font-size:11px;color:#888">within 2 quarters</span></div>
+        </div>
+        <div style="padding:10px 12px;background:#E8F5EC;border-radius:8px;border-left:3px solid #1E7E34">
+          <div style="font-size:12px;font-weight:700;color:#1E7E34;margin-bottom:3px">Organic Reach</div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;color:#555">156k/month</span><span style="font-size:12px;color:#1E7E34;font-weight:700">→ 250k+</span><span style="font-size:11px;color:#888">employee advocacy impact</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- OVERVIEW -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="panel-overview" class="panel">
+  <div class="g4" style="margin-bottom:1.25rem">
+    <div class="stat-card"><div class="sv">20</div><div class="sl">Companies Analysed</div><div class="ss">across 4 BUs</div></div>
+    <div class="stat-card" style="border-top-color:#2E75B6"><div class="sv" style="color:#2E75B6">88</div><div class="sl">Hashtags Researched</div><div class="ss">competitor-verified</div></div>
+    <div class="stat-card" style="border-top-color:#0F6E56"><div class="sv" style="color:#0F6E56">937k</div><div class="sl">6-Month Impressions</div><div class="ss">organic only</div></div>
+    <div class="stat-card" style="border-top-color:#4A3AB0"><div class="sv" style="color:#4A3AB0">15.8%</div><div class="sl">Avg Organic Engagement</div><div class="ss">vs 1.2% sponsored</div></div>
+  </div>
+  <div class="g4" style="margin-bottom:1.25rem">
+    <div class="stat-card" style="border-top-color:#C0392B"><div class="sv" style="color:#C0392B">454</div><div class="sl">Total Comments</div><div class="ss">6 months — critical low</div></div>
+    <div class="stat-card" style="border-top-color:#F4A623"><div class="sv" style="color:#F4A623">16,366</div><div class="sl">Total Reactions</div><div class="ss">organic 6 months</div></div>
+    <div class="stat-card" style="border-top-color:#1E7E34"><div class="sv" style="color:#1E7E34">9.68%</div><div class="sl">Highest Competitor Rate</div><div class="ss">Avsight Aviation MRO</div></div>
+    <div class="stat-card" style="border-top-color:#C0392B"><div class="sv" style="color:#C0392B">0.098%</div><div class="sl">Lowest Competitor Rate</div><div class="ss">Oracle — 11M followers</div></div>
+  </div>
+  <div class="bu-grid">
+    <div class="bu-card" style="border-left-color:#1B3A6B" onclick="goToHashtags('Payce')"><div class="bu-name" style="color:#1B3A6B">💰 Payce</div><div class="bu-desc">24 hashtags · GCC and APAC payroll focus · AgenticAI added</div><div class="bu-link" style="color:#1B3A6B">View toolkit →</div></div>
+    <div class="bu-card" style="border-left-color:#1E5FAA" onclick="goToHashtags('Aviation MRO')"><div class="bu-name" style="color:#1E5FAA">✈️ Aviation MRO</div><div class="bu-desc">24 hashtags · Avsight 9.68% engagement benchmark</div><div class="bu-link" style="color:#1E5FAA">View toolkit →</div></div>
+    <div class="bu-card" style="border-left-color:#0F6E56" onclick="goToHashtags('Logistics')"><div class="bu-name" style="color:#0F6E56">🚛 Logistics</div><div class="bu-desc">24 hashtags · Dangerous goods niche identified as white space</div><div class="bu-link" style="color:#0F6E56">View toolkit →</div></div>
+    <div class="bu-card" style="border-left-color:#4A3AB0" onclick="goToHashtags('ERP')"><div class="bu-name" style="color:#4A3AB0">⚙️ ERP</div><div class="bu-desc">24 hashtags · Mid-market APAC gap no competitor is filling</div><div class="bu-link" style="color:#4A3AB0">View toolkit →</div></div>
+  </div>
+  <div class="findings-box">
+    <h3>Three findings that drive everything</h3>
+    <div class="finding-row"><div class="finding-num" style="background:#1B3A6B">1</div><p>Audience Engagement and Brand Clarity together account for 66% of what the audience actually prioritises — AHP confirmed this with a perfect 0.0% consistency ratio.</p></div>
+    <div class="finding-row"><div class="finding-num" style="background:#C0392B">2</div><p>Oracle has 11 million followers and 0.098% engagement. Avsight has 11,000 followers and 9.68% engagement. Follower count is a vanity metric — resonance is what matters.</p></div>
+    <div class="finding-row"><div class="finding-num" style="background:#0F6E56">3</div><p>Ramco's APAC and MEA geographic depth is a content asset that no competitor can replicate authentically. It is currently completely unused on LinkedIn.</p></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- HASHTAGS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="panel-hashtags" class="panel">
+  <div class="bu-btns" id="hash-bu-btns">
+    <button class="bu-btn active" onclick="setHashBU('Payce',this)">💰 Payce</button>
+    <button class="bu-btn" onclick="setHashBU('Aviation MRO',this)">✈️ Aviation MRO</button>
+    <button class="bu-btn" onclick="setHashBU('Logistics',this)">🚛 Logistics</button>
+    <button class="bu-btn" onclick="setHashBU('ERP',this)">⚙️ ERP</button>
+  </div>
+  <div class="cat-filters" id="cat-filters"></div>
+  <div class="hash-count"><span id="hash-count-txt"></span><span style="font-size:11px;color:#aaa">High priority = must use · Medium = rotate</span></div>
+  <div class="hash-grid" id="hash-grid"></div>
+  <div class="hash-mix"><h4>Recommended posting mix per post</h4><p>1 broad hashtag for reach &nbsp;·&nbsp; 2 to 3 mid-range hashtags for targeted reach &nbsp;·&nbsp; 1 to 2 niche or regional hashtags for community depth</p></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- COMPETITORS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="panel-competitors" class="panel">
+  <div class="bu-btns">
+    <button class="bu-btn active" onclick="setCompBU('Payce',this)">💰 Payce</button>
+    <button class="bu-btn" onclick="setCompBU('Aviation MRO',this)">✈️ Aviation MRO</button>
+    <button class="bu-btn" onclick="setCompBU('Logistics',this)">🚛 Logistics</button>
+    <button class="bu-btn" onclick="setCompBU('ERP',this)">⚙️ ERP</button>
+  </div>
+  <div class="card"><h3 id="comp-chart-title">Engagement Rate — Payce</h3><div class="chart-wrap"><canvas id="compChart"></canvas></div></div>
+  <div class="card"><h3>Competitor Breakdown</h3><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Company</th><th>Followers</th><th>Eng. Rate</th><th>Signal</th></tr></thead><tbody id="comp-table-body"></tbody></table></div></div>
+  <div class="g2">
+    <div class="card" style="margin-bottom:0"><h3>Key Insights</h3><div id="comp-insights"></div></div>
+    <div class="card" style="margin-bottom:0"><h3>Content Gaps Ramco Can Own</h3><div id="comp-gaps"></div></div>
+  </div>
+  <div style="height:10px"></div>
+  <div class="steal-box"><div class="steal-label">💡 Steal This Idea</div><p id="comp-steal"></p></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ANALYTICS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="panel-analytics" class="panel">
+  <div class="ana-stat-grid">
+    <div class="ana-stat"><div class="av" style="color:#1B3A6B">937k</div><div class="al">Organic Impressions</div></div>
+    <div class="ana-stat"><div class="av" style="color:#888">2.67M</div><div class="al">Sponsored Impressions</div></div>
+    <div class="ana-stat"><div class="av" style="color:#2E75B6">16,366</div><div class="al">Total Reactions</div></div>
+    <div class="ana-stat"><div class="av" style="color:#C0392B">454</div><div class="al">Total Comments</div></div>
+    <div class="ana-stat"><div class="av" style="color:#1E7E34">15.8%</div><div class="al">Avg Organic Engagement</div></div>
+    <div class="ana-stat"><div class="av" style="color:#aaa">1.2%</div><div class="al">Avg Sponsored Engagement</div></div>
+  </div>
+  <div class="card"><h3>Monthly Organic Impressions (Dec 25 to May 26)</h3><div class="chart-wrap"><canvas id="impressionsChart"></canvas></div></div>
+  <div class="card"><h3>Organic Engagement Rate Trend</h3><div class="chart-wrap"><canvas id="engRateChart"></canvas></div></div>
+  <h3 style="font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:10px">Key Findings</h3>
+  <div id="analytics-findings"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- GROWTH -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="panel-growth" class="panel">
+  <p style="font-size:13px;color:#666;margin-bottom:1.25rem">Five research-backed growth tactics for Ramco to implement in the next quarter</p>
+  <div id="tactics-list"></div>
+  <div class="exp-box">
+    <h3>Mini Growth Experiment</h3>
+    <div class="exp-sub">The APAC Payroll Reality Series — 6 weeks combining hook-led carousels with follow-up polls</div>
+    <div class="week-row"><div class="week-label">Week 1</div><div class="week-action">Carousel — 5 payroll compliance changes across APAC in 2026 that most HR teams missed + poll next day</div></div>
+    <div class="week-row"><div class="week-label">Week 2</div><div class="week-action">Carousel — What running payroll across 8 countries actually looks like + poll next day</div></div>
+    <div class="week-row"><div class="week-label">Week 3</div><div class="week-action">Employee advocacy — 5 Ramco payroll specialists share their regional insight from personal profiles</div></div>
+    <div class="week-row"><div class="week-label">Week 4</div><div class="week-action">Carousel — GCC Wage Protection System — what companies are still getting wrong + poll next day</div></div>
+    <div class="week-row"><div class="week-label">Week 5</div><div class="week-action">Results post — share what the poll data revealed and Ramco's perspective on it</div></div>
+    <div class="week-row"><div class="week-label">Week 6</div><div class="week-action">Customer story carousel — a real client outcome from the APAC or GCC region</div></div>
+    <div class="benchmarks">
+      <h4>Success Benchmarks</h4>
+      <div class="bench-grid">
+        <div><div class="bench-metric">Engagement Rate</div><div class="bench-target">25%+</div><div class="bench-current">Current 15.8%</div></div>
+        <div><div class="bench-metric">Comments per Post</div><div class="bench-target">10+</div><div class="bench-current">Current 3/day</div></div>
+        <div><div class="bench-metric">Poll Participation</div><div class="bench-target">50+ votes</div><div class="bench-current">None currently</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .app -->
+
+<script>
+const HASHTAGS={Payce:[{tag:"#Payroll",cat:"Core Product",priority:"High"},{tag:"#GlobalPayroll",cat:"Core Product",priority:"High"},{tag:"#CloudPayroll",cat:"Core Product",priority:"High"},{tag:"#MultiCountryPayroll",cat:"Core Product",priority:"High"},{tag:"#InternationalPayroll",cat:"Core Product",priority:"High"},{tag:"#PayrollAutomation",cat:"Core Product",priority:"High"},{tag:"#PayrollManagement",cat:"Core Product",priority:"Medium"},{tag:"#PayrollOutsourcing",cat:"Core Product",priority:"High"},{tag:"#ManagedPayroll",cat:"Core Product",priority:"Medium"},{tag:"#PayrollCompliance",cat:"Pain Point",priority:"High"},{tag:"#HRCompliance",cat:"Pain Point",priority:"High"},{tag:"#WPS",cat:"Regional",priority:"High"},{tag:"#GCCWorkforce",cat:"Regional",priority:"High"},{tag:"#GCCCompliance",cat:"Regional",priority:"High"},{tag:"#MEAPayroll",cat:"Regional",priority:"High"},{tag:"#SEAPayroll",cat:"Regional",priority:"Medium"},{tag:"#HRAutomation",cat:"Core Product",priority:"High"},{tag:"#WorkforceCompliance",cat:"Core Product",priority:"High"},{tag:"#HRManagedServices",cat:"Core Product",priority:"High"},{tag:"#HRTech",cat:"Industry",priority:"High"},{tag:"#HRTransformation",cat:"Trend",priority:"High"},{tag:"#AgenticAI",cat:"AI Trend",priority:"High"},{tag:"#PayrollAI",cat:"AI Trend",priority:"High"},{tag:"#FutureOfPayroll",cat:"AI Trend",priority:"Medium"}],"Aviation MRO":[{tag:"#Aviation",cat:"Industry",priority:"High"},{tag:"#Aerospace",cat:"Industry",priority:"High"},{tag:"#MRO",cat:"Core Product",priority:"High"},{tag:"#AvMRO",cat:"Core Product",priority:"High"},{tag:"#AviationMRO",cat:"Core Product",priority:"High"},{tag:"#AircraftMaintenance",cat:"Core Product",priority:"High"},{tag:"#MROSoftware",cat:"Core Product",priority:"High"},{tag:"#AviationSoftware",cat:"Core Product",priority:"High"},{tag:"#CMMS",cat:"Core Product",priority:"High"},{tag:"#AOG",cat:"Pain Point",priority:"High"},{tag:"#FleetManagement",cat:"Pain Point",priority:"High"},{tag:"#AviationCompliance",cat:"Pain Point",priority:"High"},{tag:"#AviationSupplyChain",cat:"Pain Point",priority:"Medium"},{tag:"#PredictiveMaintenance",cat:"Trend",priority:"High"},{tag:"#DigitalMRO",cat:"Trend",priority:"High"},{tag:"#PaperlessMRO",cat:"Trend",priority:"High"},{tag:"#AIinAviation",cat:"AI Trend",priority:"Medium"},{tag:"#AgenticAI",cat:"AI Trend",priority:"High"},{tag:"#AIinMRO",cat:"AI Trend",priority:"High"},{tag:"#EnterpriseAI",cat:"AI Trend",priority:"Medium"},{tag:"#AviationSafety",cat:"Trend",priority:"Medium"},{tag:"#AirlineMRO",cat:"Niche",priority:"High"},{tag:"#HelicopterMRO",cat:"Niche",priority:"Medium"},{tag:"#MRODigitalization",cat:"Thought Leadership",priority:"High"}],Logistics:[{tag:"#Logistics",cat:"Industry",priority:"High"},{tag:"#SupplyChain",cat:"Industry",priority:"High"},{tag:"#TMS",cat:"Core Product",priority:"High"},{tag:"#WMS",cat:"Core Product",priority:"High"},{tag:"#LogisticsSoftware",cat:"Core Product",priority:"High"},{tag:"#WarehouseManagement",cat:"Core Product",priority:"High"},{tag:"#LogisticsManagement",cat:"Core Product",priority:"Medium"},{tag:"#3PL",cat:"Industry",priority:"High"},{tag:"#FreightForwarding",cat:"Industry",priority:"High"},{tag:"#SupplyChainVisibility",cat:"Pain Point",priority:"High"},{tag:"#LastMileDelivery",cat:"Pain Point",priority:"High"},{tag:"#TradeCompliance",cat:"Pain Point",priority:"High"},{tag:"#GlobalTradeManagement",cat:"Pain Point",priority:"High"},{tag:"#DangerousGoods",cat:"Niche",priority:"High"},{tag:"#HazMat",cat:"Niche",priority:"High"},{tag:"#ChemicalLogistics",cat:"Niche",priority:"High"},{tag:"#DGCompliance",cat:"Niche",priority:"High"},{tag:"#DigitalSupplyChain",cat:"Trend",priority:"High"},{tag:"#AgenticAI",cat:"AI Trend",priority:"High"},{tag:"#SupplyChainAI",cat:"AI Trend",priority:"High"},{tag:"#CrossBorderLogistics",cat:"Regional",priority:"High"},{tag:"#APACLogistics",cat:"Regional",priority:"High"},{tag:"#EcommerceLogistics",cat:"Trend",priority:"High"},{tag:"#SupplyChainManagement",cat:"Thought Leadership",priority:"High"}],ERP:[{tag:"#ERP",cat:"Core Product",priority:"High"},{tag:"#ERPSoftware",cat:"Core Product",priority:"High"},{tag:"#CloudERP",cat:"Core Product",priority:"High"},{tag:"#ManufacturingERP",cat:"Core Product",priority:"High"},{tag:"#CMMS",cat:"Core Product",priority:"High"},{tag:"#EAM",cat:"Core Product",priority:"High"},{tag:"#AssetManagement",cat:"Core Product",priority:"Medium"},{tag:"#ERPImplementation",cat:"Pain Point",priority:"High"},{tag:"#FinancialManagement",cat:"Pain Point",priority:"High"},{tag:"#BusinessAutomation",cat:"Pain Point",priority:"High"},{tag:"#DigitalTransformation",cat:"Industry",priority:"High"},{tag:"#Manufacturing",cat:"Industry",priority:"High"},{tag:"#SmartManufacturing",cat:"Trend",priority:"High"},{tag:"#SmartSupplyChain",cat:"Trend",priority:"High"},{tag:"#ManufacturingExcellence",cat:"Industry",priority:"Medium"},{tag:"#DigitalManufacturing",cat:"Trend",priority:"High"},{tag:"#ManufacturingTech",cat:"Trend",priority:"High"},{tag:"#AgenticAI",cat:"AI Trend",priority:"High"},{tag:"#EnterpriseAI",cat:"AI Trend",priority:"High"},{tag:"#IndustrialAI",cat:"AI Trend",priority:"High"},{tag:"#ERPCloud",cat:"Trend",priority:"Medium"},{tag:"#MidMarketERP",cat:"Niche",priority:"High"},{tag:"#GlobalManufacturing",cat:"Industry",priority:"High"},{tag:"#ProcessManufacturing",cat:"Niche",priority:"Medium"}]};
+
+const CAT_COLORS={"Core Product":{bg:"#E8F2FF",text:"#1B3A6B"},"Industry":{bg:"#E8F5EC",text:"#1E6B35"},"Pain Point":{bg:"#FEF3E8",text:"#9A4B00"},"Trend":{bg:"#F0ECFF",text:"#4A3AB0"},"AI Trend":{bg:"#FFF0E8",text:"#B03A00"},"Regional":{bg:"#E8F8FF",text:"#005A8A"},"Niche":{bg:"#FFF8E8",text:"#8A6200"},"Thought Leadership":{bg:"#F5E8FF",text:"#6A00A0"}};
+
+const COMPETITORS={Payce:{rows:[{name:"ADP",followers:"2M",eng:0.48,note:"Largest brand, lowest engagement"},{name:"Darwinbox",followers:"205k",eng:1.72,note:"Thought leadership content"},{name:"Deel",followers:"769k",eng:2.93,note:"Conversational and interactive"},{name:"Keka HR",followers:"218k",eng:2.95,note:"Community events drive results"},{name:"Papaya Global",followers:"132k",eng:3.21,note:"High frequency, heavy reposts"}],insights:["ADP has 2M followers but only 0.48% engagement — size without resonance is worthless","Deel's conversational tone and interactive polls drive 2.93% despite a smaller audience than ADP","No competitor speaks to APAC or GCC payroll compliance specifically — Ramco can own this entirely","Emotional connection is missing across all 5 brands — the first brand to humanise payroll wins"],gaps:["Country specific payroll compliance for APAC and GCC","Content for the payroll manager not just the CHRO","Payroll as a trust function not just a compliance task"],steal:"Steal from Deel — run polls asking APAC payroll managers their biggest compliance challenge. Something no ADP or Deel can answer as authentically as Ramco."},"Aviation MRO":{rows:[{name:"Veryon",followers:"59k",eng:3.12,note:"Consistent storytelling content"},{name:"Trax",followers:"6k",eng:3.87,note:"Human content beats corporate"},{name:"IFS",followers:"478k",eng:4.0,note:"Strong event-driven content"},{name:"AMOS",followers:"19k",eng:5.81,note:"Niche audience, relevant news"},{name:"Avsight",followers:"11k",eng:9.68,note:"Emotional stories — highest in tracker"}],insights:["Avsight has 11k followers and 9.68% engagement — the highest rate in the entire 20-company tracker","Veryon is the only real content marketing player — everyone else just does announcements","Trax's Mother's Day post outperformed all their aviation content — human emotion beats technical content","Nobody is creating content for the maintenance technician — only for buyers and executives"],gaps:["APAC aviation MRO growth story — no competitor owns this","MRO talent shortage and how software reduces burden on overworked teams","Humanising the maintenance technician behind the work"],steal:"Steal from Veryon — long storytelling captions walking through a real MRO problem before presenting a solution. Ramco can do this with APAC regional depth Veryon cannot match."},Logistics:{rows:[{name:"Oracle TM",followers:"11M",eng:0.098,note:"Worst in entire tracker"},{name:"SAP TM",followers:"5M",eng:0.72,note:"Parent brand dilutes TMS identity"},{name:"BluJay",followers:"181k",eng:1.46,note:"Industry education content"},{name:"CargoWise",followers:"43k",eng:2.29,note:"Product-focused, operational"},{name:"Descartes",followers:"48k",eng:5.11,note:"Best in BU — resource-led"}],insights:["Oracle has 11M followers and 0.098% engagement — 52x worse than Descartes who has 48k followers","Ramco's dedicated TMS identity is a structural advantage Oracle and SAP cannot replicate","No competitor covers dangerous goods or chemical logistics on LinkedIn — exclusive Ramco territory","ASEAN cross-border logistics complexity is completely ignored across all 5 competitors"],gaps:["New Southeast Asian supply chains and what they mean for logistics managers daily","ASEAN trade rules and cross-border complexity logistics teams navigate every week","Dangerous goods and chemical logistics — an exclusive Ramco content space"],steal:"Steal from BluJay — problem-first post structure with a data point as the hook. Start with the APAC supply chain reality and let the solution follow naturally."},ERP:{rows:[{name:"Sage X3",followers:"621k",eng:0.11,note:"Second worst in entire tracker"},{name:"MS Dynamics",followers:"240k",eng:1.48,note:"Creative product content"},{name:"Infor",followers:"916k",eng:1.56,note:"Industry-specific positioning"},{name:"NetSuite",followers:"510k",eng:2.04,note:"Outcome-first content"},{name:"Epicor",followers:"163k",eng:2.18,note:"Best in ERP — niche manufacturing"}],insights:["Sage has 621k followers and 0.11% engagement — a structural content strategy failure","NetSuite's outcome-first content is the most compelling ERP approach — leads with results not features","Every ERP brand talks about AI without saying anything specific — generic AI posts are meaningless now","Mid-market APAC and MEA manufacturers are the fastest growing ERP buyer segment and nobody talks to them"],gaps:["Mid-size APAC and MEA businesses that every competitor ignores in favour of large enterprise","Family businesses across Asia and the Middle East modernising for the next generation","The honest conversation about what spreadsheets silently cost a business monthly"],steal:"Steal from NetSuite — outcome-first content. Instead of listing features say: a mid-size manufacturer in Southeast Asia reduced their month-end close from 12 days to 3. Lead with the result."}};
+
+const ANALYTICS_DATA=[{month:"Dec 25",impressions:138051,engRate:20.08},{month:"Jan 26",impressions:89802,engRate:8.94},{month:"Feb 26",impressions:150198,engRate:14.20},{month:"Mar 26",impressions:198993,engRate:13.95},{month:"Apr 26",impressions:129171,engRate:15.86},{month:"May 26",impressions:200572,engRate:21.21}];
+
+const FINDINGS=[{title:"Performance is all over the place",body:"Month on month swings are too big to ignore. Down 35% in January, up 67% in February, down 35% again in April. No steady upward trend — peaks are campaign-dependent not strategy-dependent."},{title:"January 2026 was a wake up call",body:"Only 7 comments in the entire month — the lowest in 6 months by a massive gap. Impressions fell 35% from December. Something clearly stopped working that month."},{title:"Organic is doing the real work",body:"Sponsored gets 3x more impressions but only 1.21% engagement. Organic achieves 15.82% despite far less reach. The audience responds to real content, not paid push."},{title:"December and March are our benchmarks",body:"December had the highest engagement rate at 20.08%. March had the most reactions and comments. These two months show what Ramco's LinkedIn can look like when the content is right."},{title:"More reach does not mean more engagement",body:"May 4 to 7 had the highest impressions of the 6 months but below-average engagement. April 16 had only 1,882 impressions but 63.7% engagement — the best single day in the entire period."},{title:"Post Tuesday to Thursday",body:"Wednesday gives the highest impressions and most comments. Thursday gives the best engagement rate. Weekends are consistently dead with under 3,000 impressions per day."},{title:"The comment problem is real",body:"Only 454 comments across 6 months — less than 3 per day. People scroll and react but never stop to say anything. This is Ramco's most critical LinkedIn gap."}];
+
+const TACTICS=[{icon:"👥",title:"Employee Advocacy Programme",stat:"561% more reach",body:"Train Ramco employees to share content from personal profiles. Only 3% of employees share company content but generate 30% of total engagement. Start with 10 to 15 employees already active on LinkedIn and give them post frameworks to personalise.",source:"Content Marketing Institute B2B Report 2026"},{icon:"🎠",title:"Carousel and Document Posts",stat:"6.60% avg engagement",body:"Convert existing case studies and blogs into swipeable multi-slide carousel posts. Carousels achieve 596% more engagement than text-only posts. LinkedIn's 2026 algorithm prioritises dwell time and carousels generate the most of it.",source:"Socialinsider LinkedIn Benchmarks 2026"},{icon:"🪝",title:"Hook-Led Post Restructuring",stat:"3x average engagement",body:"Rewrite the first two lines of every post using a contrarian, data, or problem-first hook. The first 2 lines determine whether someone reads the post or keeps scrolling. This tactic costs nothing and can apply to the very next post.",source:"Meet-Lea.com LinkedIn Content Hooks Analysis 2026"},{icon:"📊",title:"Weekly Poll Series",stat:"8.9% engagement rate",body:"Launch a recurring weekly poll asking the audience a direct question about their industry pain points. Voting is one click so participation barrier is the lowest of any content format. Rotate polls across all four BUs.",source:"ConnectSafely.ai LinkedIn Statistics 2026"},{icon:"📰",title:"LinkedIn Newsletter for APAC and MEA",stat:"150% YoY growth",body:"Launch a fortnightly Ramco LinkedIn newsletter covering enterprise software trends for APAC and MEA. Newsletters bypass the algorithm entirely by landing directly in subscriber inboxes. No competitor publishes one for this region.",source:"DigitalApplied.com LinkedIn Statistics 2026"}];
+
+let currentHashBU="Payce",currentCatFilter="All",currentCompBU="Payce";
+let compChart=null,impressionsChart=null,engRateChart=null;
+
+function switchTab(tab,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  btn.classList.add('active');
+  if(tab==='analytics')renderAnalyticsCharts();
+  if(tab==='competitors')renderCompChart(currentCompBU);
+  if(tab==='hashtags')renderHashtags();
+  if(tab==='growth')renderTactics();
+}
+
+function goToHashtags(bu){
+  currentHashBU=bu;currentCatFilter="All";
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-hashtags').classList.add('active');
+  document.querySelectorAll('.tab-btn')[2].classList.add('active');
+  document.querySelectorAll('#hash-bu-btns .bu-btn').forEach((b,i)=>{b.classList.toggle('active',['Payce','Aviation MRO','Logistics','ERP'][i]===bu)});
+  renderHashtags();
+}
+
+function setHashBU(bu,btn){currentHashBU=bu;currentCatFilter="All";document.querySelectorAll('#hash-bu-btns .bu-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderHashtags();}
+
+function setCatFilter(cat,btn){currentCatFilter=cat;document.querySelectorAll('#cat-filters .cat-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderHashtagCards();}
+
+function renderHashtags(){
+  const data=HASHTAGS[currentHashBU];
+  const cats=["All",...new Set(data.map(h=>h.cat))];
+  document.getElementById('cat-filters').innerHTML=cats.map(c=>`<button class="cat-btn${c===currentCatFilter?' active':''}" onclick="setCatFilter('${c}',this)">${c}</button>`).join('');
+  renderHashtagCards();
+}
+
+function renderHashtagCards(){
+  const data=HASHTAGS[currentHashBU].filter(h=>currentCatFilter==="All"||h.cat===currentCatFilter);
+  document.getElementById('hash-count-txt').textContent=`Showing ${data.length} hashtags for ${currentHashBU}`;
+  document.getElementById('hash-grid').innerHTML=data.map(h=>{
+    const c=CAT_COLORS[h.cat]||{bg:"#eee",text:"#333"};
+    const pc=h.priority==="High"?{bg:"#E8F5EC",text:"#1E6B35"}:{bg:"#FFF8E8",text:"#8A6200"};
+    return`<div class="hash-card" style="border-left-color:${c.text}"><div class="hash-tag">${h.tag}</div><div class="hash-badges"><span class="badge" style="background:${c.bg};color:${c.text}">${h.cat}</span><span class="badge" style="background:${pc.bg};color:${pc.text}">${h.priority}</span></div></div>`;
+  }).join('');
+}
+
+function setCompBU(bu,btn){currentCompBU=bu;document.querySelectorAll('#panel-competitors .bu-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCompData(bu);renderCompChart(bu);}
+
+function renderCompData(bu){
+  const d=COMPETITORS[bu];
+  document.getElementById('comp-chart-title').textContent=`Engagement Rate — ${bu}`;
+  document.getElementById('comp-table-body').innerHTML=d.rows.map(r=>{const cls=r.eng>3?'eng-high':r.eng<1?'eng-low':'eng-mid';return`<tr><td class="name-col">${r.name}</td><td class="followers-col">${r.followers}</td><td><span class="${cls}">${r.eng.toFixed(2)}%</span></td><td class="note-col">${r.note}</td></tr>`;}).join('');
+  document.getElementById('comp-insights').innerHTML=d.insights.map(i=>`<div class="insight-row"><span class="dot-blue">·</span><p>${i}</p></div>`).join('');
+  document.getElementById('comp-gaps').innerHTML=d.gaps.map(g=>`<div class="insight-row"><span class="dot-gold">★</span><p>${g}</p></div>`).join('');
+  document.getElementById('comp-steal').textContent=d.steal;
+}
+
+function renderCompChart(bu){
+  const d=COMPETITORS[bu];const ctx=document.getElementById('compChart').getContext('2d');
+  if(compChart)compChart.destroy();
+  compChart=new Chart(ctx,{type:'bar',data:{labels:d.rows.map(r=>r.name),datasets:[{data:d.rows.map(r=>r.eng),backgroundColor:d.rows.map(r=>r.eng>3?'#1E7E34':r.eng<1?'#C0392B':'#2E75B6'),borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw.toFixed(2)}%`}}},scales:{y:{ticks:{callback:v=>v+'%',font:{size:11}},grid:{color:'#f0f0f0'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
+}
+
+function renderAnalyticsCharts(){
+  const labels=ANALYTICS_DATA.map(d=>d.month);
+  const ctx1=document.getElementById('impressionsChart').getContext('2d');
+  if(impressionsChart)impressionsChart.destroy();
+  impressionsChart=new Chart(ctx1,{type:'bar',data:{labels,datasets:[{data:ANALYTICS_DATA.map(d=>d.impressions),backgroundColor:'#1B3A6B',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${(ctx.raw/1000).toFixed(1)}k impressions`}}},scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'k',font:{size:11}},grid:{color:'#f0f0f0'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  const ctx2=document.getElementById('engRateChart').getContext('2d');
+  if(engRateChart)engRateChart.destroy();
+  engRateChart=new Chart(ctx2,{type:'line',data:{labels,datasets:[{data:ANALYTICS_DATA.map(d=>d.engRate),borderColor:'#F4A623',backgroundColor:'rgba(244,166,35,0.08)',borderWidth:2.5,pointBackgroundColor:'#F4A623',pointRadius:5,tension:0.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.raw.toFixed(2)}%`}}},scales:{y:{ticks:{callback:v=>v+'%',font:{size:11}},grid:{color:'#f0f0f0'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  document.getElementById('analytics-findings').innerHTML=FINDINGS.map((f,i)=>`<div class="finding-card"><div class="fn">${i+1}</div><div><div class="ft">${f.title}</div><div class="fb">${f.body}</div></div></div>`).join('');
+}
+
+function renderTactics(){
+  document.getElementById('tactics-list').innerHTML=TACTICS.map((t,i)=>`<div class="tactic-card"><div class="tactic-header"><div class="tactic-left"><div class="tactic-icon">${t.icon}</div><div class="tactic-title">${i+1}. ${t.title}</div></div><div class="tactic-stat">${t.stat}</div></div><div class="tactic-body">${t.body}</div><div class="tactic-source">Source — ${t.source}</div></div>`).join('');
+}
+
+renderHashtags();
+renderCompData('Payce');
+renderTactics();
+</script>
+</body>
+</html>
+
+
